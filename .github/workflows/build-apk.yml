@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK with Auto-Fix
 
 on:
   push:
@@ -23,31 +23,77 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+    - name: Build Debug APK with Full Debug Output
+      id: build_debug
+      run: ./gradlew assembleDebug --stacktrace --debug 2>&1 | tee build-debug.log
+      continue-on-error: true
     
-    - name: Build Release APK
-      run: ./gradlew assembleRelease --stacktrace
+    - name: Build Release APK with Full Debug Output
+      id: build_release
+      run: ./gradlew assembleRelease --stacktrace --debug 2>&1 | tee build-release.log
+      continue-on-error: true
+    
+    - name: Verify Debug APK Artifact
+      id: verify_debug
+      run: |
+        if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+          echo "✅ Debug APK verified - $(ls -lh app/build/outputs/apk/debug/app-debug.apk | awk '{print $5}')"
+          echo "DEBUG_APK_EXISTS=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Debug APK NOT found"
+          echo "DEBUG_APK_EXISTS=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Verify Release APK Artifact
+      id: verify_release
+      run: |
+        if [ -f "app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+          echo "✅ Release APK verified - $(ls -lh app/build/outputs/apk/release/app-release-unsigned.apk | awk '{print $5}')"
+          echo "RELEASE_APK_EXISTS=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Release APK NOT found"
+          echo "RELEASE_APK_EXISTS=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Check Build Status
+      run: |
+        echo "Build Debug Status: ${{ steps.build_debug.outcome }}"
+        echo "Build Release Status: ${{ steps.build_release.outcome }}"
+        echo "Debug APK Exists: ${{ steps.verify_debug.outputs.DEBUG_APK_EXISTS }}"
+        echo "Release APK Exists: ${{ steps.verify_release.outputs.RELEASE_APK_EXISTS }}"
     
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
-      if: always()
+      if: steps.verify_debug.outputs.DEBUG_APK_EXISTS == 'true'
       with:
-        name: android-auto-debug
-        path: app/build/outputs/apk/debug/
+        name: android-auto-debug-apk
+        path: app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
     
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
-      if: always()
+      if: steps.verify_release.outputs.RELEASE_APK_EXISTS == 'true'
       with:
-        name: android-auto-release
-        path: app/build/outputs/apk/release/
+        name: android-auto-release-apk
+        path: app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 30
     
-    - name: Display build results
-      if: success()
+    - name: Upload Debug Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-logs
+        path: |
+          build-debug.log
+          build-release.log
+        retention-days: 7
+    
+    - name: Verify Build Success
       run: |
-        echo "✅ Build completed successfully!"
-        ls -la app/build/outputs/apk/debug/
-        ls -la app/build/outputs/apk/release/
+        if [ "${{ steps.verify_debug.outputs.DEBUG_APK_EXISTS }}" == "true" ] && [ "${{ steps.verify_release.outputs.RELEASE_APK_EXISTS }}" == "true" ]; then
+          echo "✅ BUILD SUCCESSFUL - Both Debug and Release APKs verified"
+          exit 0
+        else
+          echo "❌ BUILD FAILED - APK verification failed"
+          exit 1
+        fi
