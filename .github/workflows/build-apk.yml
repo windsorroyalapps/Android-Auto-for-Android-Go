@@ -1,0 +1,50 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ bmw-can-dev, main ]
+  pull_request:
+    branches: [ bmw-can-dev, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    
+    - name: Build with Gradle (Debug)
+      run: ./gradlew assembleDebug
+    
+    - name: Build with Gradle (Release)
+      run: ./gradlew assembleRelease
+    
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-auto-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
+    
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-auto-release
+        path: app/build/outputs/apk/release/app-release-unsigned.apk
+    
+    - name: Display build results
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "Debug APK: app/build/outputs/apk/debug/app-debug.apk"
+        echo "Release APK: app/build/outputs/apk/release/app-release-unsigned.apk"
