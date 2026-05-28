@@ -63,12 +63,13 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
 
-    // Android Auto - Using stable version 1.5.0
-    implementation("androidx.car.app:app:1.5.0")
-    
     // Android Go specific optimizations
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.activity:activity-ktx:1.8.1")
+    
+    // Android Auto - Temporarily commented due to unavailable versions
+    // Will implement with correct version or alternative after research
+    // implementation("androidx.car.app:app:1.4.0")
 
     // Keep dependencies minimal for Android Go
     // Consider using AndroidX only, not Material3 unless necessary
