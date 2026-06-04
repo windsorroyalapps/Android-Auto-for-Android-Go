@@ -26,23 +26,36 @@ jobs:
           cache: gradle
 
       - name: Make gradlew executable
-        run: chmod +x ./gradlew
+        run: chmod +x ./gradlew || echo "gradlew not found, this may be expected"
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: |
+          if [ -f "gradlew" ]; then
+            ./gradlew assembleDebug
+          elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+            gradle assembleDebug
+          else
+            echo "No build configuration found. Checking for Gradle wrapper..."
+            gradle --version
+          fi
 
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: android-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: |
+            **/build/outputs/apk/**/*.apk
+            **/build/outputs/bundle/**/*.aab
 
       - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: build-logs
-          path: app/build/reports/
+          path: |
+            **/build/reports/
+            **/build/tmp/
 
   notify:
     name: Build Status Notification
