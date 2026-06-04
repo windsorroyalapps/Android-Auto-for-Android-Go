@@ -9,21 +9,16 @@ android {
 
     defaultConfig {
         applicationId = "com.aago.androidauto"
-        minSdk = 21  // Android 5.0 - Minimum for Android Go
+        minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-        
-        // Android Go optimizations
-        ndk.abiFilters.add("armeabi-v7a")  // 32-bit ARM for Android Go devices
-        
-        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            isShrinkResources = true  // Remove unused resources for Android Go
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
@@ -32,19 +27,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11  // Reduced from 17 for better Android Go compatibility
+        sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
         jvmTarget = "11"
-    }
-
-    // Bundle configuration for optimized delivery
-    bundle {
-        language.enableSplit = true
-        density.enableSplit = true
-        abi.enableSplit = true
     }
 
     packagingOptions {
@@ -59,18 +47,8 @@ android {
 }
 
 dependencies {
-    // Core Android libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-
-    // Android Go specific optimizations
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-    implementation("androidx.activity:activity-ktx:1.8.1")
-    
-    // Android Auto - Temporarily commented due to unavailable versions
-    // Will implement with correct version or alternative after research
-    // implementation("androidx.car.app:app:1.4.0")
-
-    // Keep dependencies minimal for Android Go
-    // Consider using AndroidX only, not Material3 unless necessary
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.ktx)
 }
