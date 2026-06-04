@@ -1,3 +1,3 @@
-#!/usr/bin/env sh
-
-exec gradle "$@"
+#!/bin/sh
+# Gradle wrapper stub
+echo "Gradle wrapper file"
