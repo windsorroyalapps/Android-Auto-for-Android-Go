@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - bmw-can-dev
   pull_request:
     branches:
       - main
+      - bmw-can-dev
   workflow_dispatch:
 
 jobs:
@@ -18,44 +20,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
           cache: gradle
 
       - name: Make gradlew executable
-        run: chmod +x ./gradlew || echo "gradlew not found, this may be expected"
+        run: chmod +x ./gradlew
 
       - name: Build Debug APK
-        run: |
-          if [ -f "gradlew" ]; then
-            ./gradlew assembleDebug
-          elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
-            gradle assembleDebug
-          else
-            echo "No build configuration found. Checking for Gradle wrapper..."
-            gradle --version
-          fi
+        run: ./gradlew assembleDebug --stacktrace --info
 
       - name: Upload APK
-        if: always()
-        uses: actions/upload-artifact@v3
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: |
-            **/build/outputs/apk/**/*.apk
-            **/build/outputs/bundle/**/*.aab
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 7
 
       - name: Upload Build Logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-logs
           path: |
-            **/build/reports/
-            **/build/tmp/
+            app/build/reports/
+            app/build/tmp/
+          retention-days: 7
 
   notify:
     name: Build Status Notification
@@ -66,8 +60,13 @@ jobs:
     steps:
       - name: Build Success
         if: needs.build.result == 'success'
-        run: echo "✅ APK build completed successfully! Download from the artifacts."
+        run: |
+          echo "✅ APK build completed successfully!"
+          echo "Download the APK from the artifacts section."
 
       - name: Build Failed
         if: needs.build.result == 'failure'
-        run: echo "❌ APK build failed. Check the logs for details."
+        run: |
+          echo "❌ APK build failed!"
+          echo "Check the logs in the 'Build APK' job for details."
+          exit 1
